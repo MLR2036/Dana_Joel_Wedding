@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dana &amp; Joel · 12 June 2027</title>
+  <meta name="description" content="Dana and Joel are getting married. Details, RSVP and travel.">
+  <!-- Keep the site out of search engines: only people with the link should find it. -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#5f7161">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235f7161'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-style='italic' font-size='40' text-anchor='middle' fill='%23faf7f2'%3E%26%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Jost:wght@400;500&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/rsvp.js" defer></script>
+</head>
+<body>
+
+  <!-- 1. Landing -->
+  <header class="hero">
+    <div class="hero__photo" role="img" aria-label="Dana and Joel"></div>
+    <div class="hero__scrim"></div>
+    <div class="hero__content">
+      <p class="eyebrow">Together with their families</p>
+      <h1 class="hero__names">Dana <span class="amp">&amp;</span> Joel</h1>
+      <div class="hero__rule"></div>
+      <p class="hero__meta">
+        <span class="eyebrow">Saturday 12 June 2027</span>
+        <span class="eyebrow">Hartwell House · Buckinghamshire</span>
+      </p>
+      <a class="btn btn--on-photo" href="#details">The details</a>
+    </div>
+    <a class="hero__cue" href="#details">Scroll</a>
+  </header>
+
+  <main>
+    <!-- 2. The day -->
+    <section class="details" id="details">
+      <p class="eyebrow muted">The day</p>
+      <h2 class="section-title">Ceremony <span class="amp">&amp;</span> Reception</h2>
+      <div class="details__grid">
+        <article class="detail">
+          <p class="eyebrow muted">When</p>
+          <h3>Saturday 12 June 2027</h3>
+          <p>Ceremony 2:00 pm</p>
+          <p>Reception from 4:00 pm</p>
+          <p class="muted">Carriages at midnight</p>
+        </article>
+        <article class="detail">
+          <p class="eyebrow muted">Where</p>
+          <h3>Hartwell House</h3>
+          <p>Oxford Road, Aylesbury</p>
+          <p>Buckinghamshire HP17 8NR</p>
+          <a href="https://www.google.com/maps/search/?api=1&amp;query=Hartwell+House+Aylesbury+HP17+8NR" target="_blank" rel="noopener">View on map →</a>
+        </article>
+        <article class="detail">
+          <p class="eyebrow muted">Dress</p>
+          <h3>Garden formal</h3>
+          <p>The ceremony is outdoors on the lawn.</p>
+          <p class="muted">Flat shoes recommended.</p>
+        </article>
+      </div>
+      <div class="details__cta">
+        <div class="details__links">
+          <a class="btn" href="#rsvp">RSVP</a>
+          <a class="btn btn--ghost" href="#travel">Travel &amp; stay</a>
+        </div>
+        <small>Please reply by 1 March 2027</small>
+      </div>
+    </section>
+
+    <!-- 3. RSVP -->
+    <section class="rsvp" id="rsvp">
+      <div class="rsvp__card">
+        <div class="rsvp__head">
+          <p class="eyebrow">Kindly reply</p>
+          <h2>RSVP</h2>
+          <p>Please reply by 1 March 2027. Each guest replies separately, so couples, please send one reply each.</p>
+        </div>
+
+        <div class="thanks" id="rsvp-thanks" hidden tabindex="-1" aria-live="polite">
+          <span class="amp thanks__mark" aria-hidden="true">&amp;</span>
+          <h3 id="thanks-title">Thank you!</h3>
+          <p id="thanks-body"></p>
+          <a class="btn btn--ghost" id="thanks-travel" href="#travel">Travel &amp; stay ↓</a>
+        </div>
+
+        <form class="form" id="rsvp-form" novalidate>
+          <div class="field">
+            <label class="label" for="name">Full name</label>
+            <input class="input" id="name" name="name" autocomplete="name" maxlength="120" required>
+            <span class="error-msg" id="name-error" hidden>Please add your full name.</span>
+          </div>
+          <div class="field">
+            <label class="label" for="email">Email</label>
+            <input class="input" id="email" name="email" type="email" autocomplete="email" maxlength="200" required aria-describedby="email-hint">
+            <span class="hint" id="email-hint">We'll send your confirmation here, and only use it for updates about the day.</span>
+            <span class="error-msg" id="email-error" hidden>Please add your email so we can send your confirmation.</span>
+          </div>
+
+          <hr class="divider">
+
+          <fieldset>
+            <legend>Will you be joining us?</legend>
+            <div class="options">
+              <label class="option"><input type="radio" name="attending" value="yes" required> Joyfully accepts</label>
+              <label class="option"><input type="radio" name="attending" value="no"> Regretfully declines</label>
+            </div>
+            <span class="error-msg" id="attending-error" hidden>Please let us know if you can come.</span>
+          </fieldset>
+
+          <p class="hint" id="decline-note" hidden>We'll miss you! Just send your reply and we'll know.</p>
+
+          <fieldset id="meal-group">
+            <legend>Your meal</legend>
+            <div class="options">
+              <label class="option option--meal">
+                <input type="radio" name="meal" value="Meat" required aria-describedby="meal-meat-desc">
+                <span class="option__text">
+                  <span class="option__title">Meat</span>
+                  <span class="option__desc" id="meal-meat-desc">Slow-roasted lamb with rosemary, dauphinoise potatoes and spring greens</span>
+                </span>
+              </label>
+              <label class="option option--meal">
+                <input type="radio" name="meal" value="Vegetarian" aria-describedby="meal-veg-desc">
+                <span class="option__text">
+                  <span class="option__title">Vegetarian</span>
+                  <span class="option__desc" id="meal-veg-desc">Wild mushroom and spring pea risotto with crispy sage and lemon</span>
+                </span>
+              </label>
+            </div>
+            <span class="error-msg" id="meal-error" hidden>Please choose your meal.</span>
+            <div class="allergy">
+              <label class="check"><input type="checkbox" id="has-allergy" name="hasAllergy" aria-controls="allergy-detail" aria-expanded="false"> I have allergies or dietary requirements</label>
+              <div class="reveal" id="allergy-detail" hidden>
+                <label class="label" for="allergy">Please tell us about them</label>
+                <textarea class="textarea" id="allergy" name="allergy" maxlength="500" placeholder="e.g. tree nuts, coeliac" aria-describedby="allergy-privacy"></textarea>
+                <span class="hint" id="allergy-privacy">We'll only share this with our caterers, and we'll delete it after the wedding.</span>
+                <span class="error-msg" id="allergy-error" hidden>Please tell us what to avoid, or untick the box.</span>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Honeypot: hidden from people. Bots fill it in; replies with it filled are dropped. -->
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this empty</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+
+          <p class="error-msg form-error" id="form-error" role="alert" hidden></p>
+          <button class="btn" type="submit" id="rsvp-submit">Send reply</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 4. Travel -->
+    <section class="travel" id="travel">
+      <div class="travel__head">
+        <p class="eyebrow muted">Getting there</p>
+        <h2 class="section-title">Travel <span class="amp">&amp;</span> Stay</h2>
+        <p class="travel__intro">Hartwell House is just outside Aylesbury, about an hour from London. Here's everything you need to get there and somewhere to rest afterwards.</p>
+      </div>
+
+      <div class="travel__ways">
+        <article class="way">
+          <p class="eyebrow muted">By car</p>
+          <h3>Driving</h3>
+          <dl class="facts">
+            <div><dt>Address</dt><dd>Oxford Road, Aylesbury HP17 8NR</dd></div>
+            <div><dt>From London</dt><dd>About 1 hr 15 min via the M40 or A41</dd></div>
+            <div><dt>Parking</dt><dd>Free on site. Cars may stay overnight and be collected by 11:00 am the next day.</dd></div>
+          </dl>
+          <a class="btn btn--ghost" href="https://www.google.com/maps/dir/?api=1&amp;destination=Hartwell+House+Aylesbury+HP17+8NR" target="_blank" rel="noopener">Get directions</a>
+        </article>
+        <article class="way">
+          <p class="eyebrow muted">By train</p>
+          <h3>Rail</h3>
+          <dl class="facts">
+            <div><dt>Nearest station</dt><dd>Aylesbury, about 10 minutes away by taxi</dd></div>
+            <div><dt>From London</dt><dd>Direct trains from Marylebone, about 1 hour</dd></div>
+            <div><dt>Taxis</dt><dd>Book ahead for the evening: Vale Cars, 01296 000 000</dd></div>
+          </dl>
+          <a class="btn btn--ghost" href="https://www.nationalrail.co.uk/" target="_blank" rel="noopener">Plan your journey</a>
+        </article>
+      </div>
+
+      <div class="travel__head travel__head--sub">
+        <p class="eyebrow muted">Where to stay</p>
+        <h3 class="travel__subtitle">Suggested accommodation</h3>
+      </div>
+
+      <div class="stays">
+        <article class="stay">
+          <p class="eyebrow muted">At the venue</p>
+          <h4>Hartwell House</h4>
+          <p>Rooms in the main house and the spa wing. Wake up where you danced.</p>
+          <p class="stay__price">From £240 a night</p>
+          <p class="stay__code">Quote <strong>DANAJOEL</strong> for our rate</p>
+          <a href="#">Book a room →</a>
+        </article>
+        <article class="stay">
+          <p class="eyebrow muted">5 min drive</p>
+          <h4>The Kings Arms</h4>
+          <p>A friendly coaching inn with a good breakfast and a garden.</p>
+          <p class="stay__price">From £130 a night</p>
+          <p class="stay__code">Rooms held until 1 April 2027</p>
+          <a href="#">Book a room →</a>
+        </article>
+        <article class="stay">
+          <p class="eyebrow muted">10 min drive</p>
+          <h4>Aylesbury Town Hotel</h4>
+          <p>Simple, comfortable rooms near the station: handy if you came by train.</p>
+          <p class="stay__price">From £85 a night</p>
+          <p class="stay__code">Book directly</p>
+          <a href="#">Book a room →</a>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer__names">Dana <span class="amp">&amp;</span> Joel</p>
+    <p class="eyebrow">12 · 06 · 2027</p>
+  </footer>
+
+</body>
+</html>

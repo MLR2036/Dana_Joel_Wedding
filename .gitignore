@@ -1,0 +1,15 @@
+# Never publish guest data
+*.csv
+*.xlsx
+*.xls
+*.ods
+exports/
+
+# OS / editor clutter
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude Code local settings
+.claude/

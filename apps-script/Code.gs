@@ -1,10 +1,20 @@
 /**
+ * @OnlyCurrentDoc
+ * (Tells Google this script only needs the spreadsheet it's attached to, not your whole Drive.)
+ *
  * Dana & Joel — RSVP receiver.
  *
  * Lives in Google Apps Script, attached to the RSVP Google Sheet (Extensions → Apps Script).
  * Saves each reply as a row and emails the guest a confirmation from this Google account.
  * This copy is in the website repo for reference only; GitHub never runs it.
  * Setup: see README.md.
+ *
+ * Security notes:
+ * - The web app URL is public (guests' browsers must reach it), so every reply is re-checked here.
+ * - Guest text is never treated as a formula in the sheet, and is escaped in the HTML email.
+ * - Emails never repeat free text the guest typed (only a cleaned first name and the fixed meal
+ *   choice), so nobody can use this script to send their own message from your Gmail.
+ * - Rate limits stop floods: a few replies per email address, and a cap per hour overall.
  */
 
 // ---- Edit these ----
@@ -14,9 +24,16 @@ const CEREMONY_TIME = '2:00 pm';
 const VENUE = 'Hartwell House, Oxford Road, Aylesbury HP17 8NR';
 const SITE_URL = 'https://mlr2036.github.io/Dana_Joel_Wedding/'; // GitHub Pages address (or your custom domain later)
 const SHEET_NAME = 'RSVPs';
+
+// Rate limits (a window restarts an hour after the most recent reply that counts toward it).
+const MAX_PER_EMAIL_PER_HOUR = 4;  // a couple sharing one address, plus a correction or two
+const MAX_TOTAL_PER_HOUR = 40;     // the whole site; real guests won't come close
+const KEEP_EMAILS_IN_RESERVE = 5;  // stop sending confirmations when Gmail's daily quota gets this low
 // --------------------
 
 const HEADERS = ['Received', 'Name', 'Email', 'Attending', 'Meal', 'Allergies / dietary', 'Possible duplicate', 'Email sent'];
+const MEALS = ['Meat', 'Vegetarian'];
+const EMAIL_RE = /^[A-Za-z0-9._%+'-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 
 /** Run once from the editor (select "setup" → Run) to create the sheet and approve permissions. */
 function setup() {
@@ -30,9 +47,14 @@ function setup() {
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
+  let locked = false;
   try {
-    lock.waitLock(15000);
-    const d = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const raw = (e && e.postData && e.postData.contents) || '';
+    if (raw.length > 5000) return reply({ ok: false, error: 'invalid' }); // real replies are far smaller
+
+    let d;
+    try { d = JSON.parse(raw); } catch (parseErr) { return reply({ ok: false, error: 'invalid' }); }
+    if (!d || typeof d !== 'object') return reply({ ok: false, error: 'invalid' });
 
     // Honeypot filled: a bot. Say ok, save nothing.
     if (d.website) return reply({ ok: true });
@@ -43,10 +65,18 @@ function doPost(e) {
     const meal = attending === 'Yes' ? clean(d.meal, 20) : '';
     const allergy = attending === 'Yes' ? clean(d.allergy, 500) : '';
 
-    if (name.length < 2) return reply({ ok: false, error: 'Missing name' });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply({ ok: false, error: 'Invalid email' });
-    if (!attending) return reply({ ok: false, error: 'Missing attendance' });
-    if (attending === 'Yes' && ['Meat', 'Vegetarian'].indexOf(meal) === -1) return reply({ ok: false, error: 'Missing meal' });
+    if (name.length < 2) return reply({ ok: false, error: 'invalid' });
+    if (!EMAIL_RE.test(email)) return reply({ ok: false, error: 'invalid' });
+    if (!attending) return reply({ ok: false, error: 'invalid' });
+    if (attending === 'Yes' && MEALS.indexOf(meal) === -1) return reply({ ok: false, error: 'invalid' });
+
+    lock.waitLock(15000);
+    locked = true;
+
+    // Rate limits, checked only for well-formed replies so junk can't lock real guests out.
+    if (overLimit('total', MAX_TOTAL_PER_HOUR) || overLimit('email:' + email, MAX_PER_EMAIL_PER_HOUR)) {
+      return reply({ ok: false, error: 'busy' });
+    }
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
     if (!sheet) throw new Error('Run setup() first');
@@ -60,25 +90,34 @@ function doPost(e) {
     sheet.appendRow([new Date(), name, email, attending, meal, allergy, duplicate ? 'Yes: check earlier reply' : '', '']);
     const row = sheet.getLastRow();
 
-    let sent = 'Yes';
-    try {
-      sendConfirmation(name, email, attending, meal, allergy);
-    } catch (mailErr) {
-      sent = 'Failed: ' + mailErr; // the reply is still saved; the guest still sees thank-you
+    let sent;
+    if (MailApp.getRemainingDailyQuota() <= KEEP_EMAILS_IN_RESERVE) {
+      sent = 'Not sent: daily email limit reached';
+    } else {
+      try {
+        sendConfirmation(name, email, attending, meal, Boolean(allergy));
+        sent = 'Yes';
+      } catch (mailErr) {
+        sent = 'Failed: ' + String(mailErr).slice(0, 200); // the reply is still saved; the guest still sees thank-you
+      }
     }
     sheet.getRange(row, HEADERS.indexOf('Email sent') + 1).setValue(sent);
 
     return reply({ ok: true });
   } catch (err) {
     console.error(err);
-    return reply({ ok: false, error: 'Server error' });
+    return reply({ ok: false, error: 'server' });
   } finally {
-    lock.releaseLock();
+    if (locked) lock.releaseLock();
   }
 }
 
-function sendConfirmation(name, email, attending, meal, allergy) {
-  const first = name.split(' ')[0];
+/**
+ * The confirmation never includes free text the guest typed: only a cleaned first name and the
+ * meal (which must be one of MEALS). Allergy details stay in the sheet.
+ */
+function sendConfirmation(name, email, attending, meal, hasAllergy) {
+  const first = safeFirstName(name);
   const yes = attending === 'Yes';
   const subject = yes ? 'See you on ' + WEDDING_DATE + '!' : 'Thank you for letting us know';
 
@@ -91,7 +130,7 @@ function sendConfirmation(name, email, attending, meal, allergy) {
         'When: ' + WEDDING_DATE + ', ceremony at ' + CEREMONY_TIME,
         'Where: ' + VENUE,
         'Your meal: ' + meal,
-        'Allergies / dietary: ' + (allergy || 'None'),
+        'Dietary requirements: ' + (hasAllergy ? "noted, and we'll pass them on to our caterers" : 'none'),
         '',
         'Travel and places to stay: ' + SITE_URL + '#travel',
         '',
@@ -121,15 +160,39 @@ function sendConfirmation(name, email, attending, meal, allergy) {
   MailApp.sendEmail({ to: email, subject: subject, body: body, htmlBody: html, name: COUPLE });
 }
 
-/** Trim, cap length, and stop text being read as a spreadsheet formula. */
+/** First word of the name, letters plus ' and - only, at most 30 characters. Falls back to "friend". */
+function safeFirstName(name) {
+  const first = String(name).split(' ')[0].replace(/[^\p{L}'\-]/gu, '').slice(0, 30);
+  return first.length >= 1 && /\p{L}/u.test(first) ? first : 'friend';
+}
+
+/** Counts one use of `key`; true if it is already at `max` within the last hour. Call inside the lock. */
+function overLimit(key, max) {
+  const cache = CacheService.getScriptCache();
+  const k = 'rl:' + Utilities.base64EncodeWebSafe(key).slice(0, 200);
+  const n = Number(cache.get(k) || 0);
+  if (n >= max) return true;
+  cache.put(k, String(n + 1), 3600);
+  return false;
+}
+
+/**
+ * Trim, cap length, remove control and invisible characters (zero-width spaces, right-to-left
+ * overrides and similar, which can disguise text), and stop text being read as a spreadsheet formula.
+ */
 function clean(v, max) {
-  let s = String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
+  let s = String(v == null ? '' : v)
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')
+    .replace(/[­؜᠎​-‏‪-‮⁠-⁩﻿]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
   if (/^[=+\-@]/.test(s)) s = "'" + s;
   return s;
 }
 
 function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function reply(obj) {

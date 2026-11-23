@@ -89,6 +89,27 @@ Then delete your test rows.
 - **Email sent** shows whether the confirmation went out. Gmail lets a script send about 100 emails a day, which is plenty here.
 - Use **Data → Create a filter** to filter by Attending or Meal for the caterers.
 
+## Updating the script
+
+Whenever `apps-script/Code.gs` changes, the copy in Google has to be updated by hand:
+
+1. In Apps Script, replace everything with the new `Code.gs` and save.
+2. Run **setup** once. If Google asks for permissions again, approve them: the script now asks for less access, only this one spreadsheet.
+3. **Deploy → Manage deployments → ✏️ → Version: New version → Deploy.** The web app URL stays the same.
+
+## Security
+
+The script's web address has to be public, so it treats every reply as untrusted:
+
+- **Formula injection:** answers starting with `=`, `+`, `-` or `@` are stored as plain text, never run as formulas.
+- **Email misuse:** confirmations never repeat text the guest typed, only a cleaned first name and the meal choice. Nobody can use the form to send their own message from your Gmail.
+- **Rate limits:** at most 4 replies per email address and 40 replies site-wide per hour. Above that, guests are asked to try again later. Confirmations also stop when Gmail's daily quota runs low, and the sheet shows "Not sent".
+- **Strict checks:** email addresses, meal and attendance values are checked again in the script. Invisible characters are stripped, and anything oversized is rejected.
+- **Least access:** `@OnlyCurrentDoc` limits the script to the RSVP spreadsheet.
+- **Honeypot:** a hidden field catches simple bots.
+
+To change the limits, edit the numbers at the top of `Code.gs`.
+
 ## Privacy
 
 - The site is set to `noindex`, so search engines won't list it. Share the link with guests directly.

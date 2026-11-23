@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check answers; focus the first problem.
     const problems = [];
     if (data.name.length < 2) problems.push('name');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) problems.push('email');
+    // Same rule as the Apps Script, so guests see a clear message rather than a failed send.
+    if (!/^[A-Za-z0-9._%+'-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(data.email)) problems.push('email');
     if (!data.attending) problems.push('attending');
     if (data.attending === 'yes' && !data.meal) problems.push('meal');
     if (data.attending === 'yes' && allergyBox.checked && !data.allergy) problems.push('allergy');
@@ -89,7 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
       showThanks(data);
     } catch (err) {
       console.error(err);
-      formError.textContent = "Sorry, we couldn't send your reply. Please try again, or email us if it keeps happening.";
+      formError.textContent = err.message === 'busy'
+        ? "We've had a lot of replies just now. Please try again in an hour."
+        : "Sorry, we couldn't send your reply. Please try again, or email us if it keeps happening.";
       formError.hidden = false;
       submit.disabled = false;
       submit.textContent = 'Send reply';
